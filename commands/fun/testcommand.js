@@ -1,15 +1,15 @@
 const { SlashCommandBuilder } = require('discord.js');
 
-const abc = new SlashCommandBuilder()
-    .setName('testcomm')
-    .setDescription('is this where the description is?')
-    .addStringOption((option) => option.setName('itsits').setDescription('The input to echo back'));
+// .addStringOption((option) => option.setName('second').setDescription('The input to echo back'));
 
 module.exports = {
-    data: abc,
+    data: new SlashCommandBuilder()
+        .setName('testcomm')
+        .setDescription('is this where the description is?')
+        .addStringOption((option) => option.setName('first').setDescription('The input to echo back')),
 
     async execute(interaction) {
-        const testvar = interaction.options.get('itsits');
+        const testvar = interaction.options.get('first');
         console.log(testvar);
         await interaction.reply(testvar.value);
     },
