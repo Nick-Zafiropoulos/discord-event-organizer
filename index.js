@@ -2,6 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, IntentsBitField } = require('discord.js');
 const dotenv = require('dotenv').config();
+const dayjs = require('dayjs');
 
 // Creates the client for the bot
 const client = new Client({
