@@ -8,7 +8,11 @@ const {
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
     ComponentType,
+    ButtonBuilder,
+    ButtonStyle,
     EmbedBuilder,
+    Client,
+    GatewayIntentBits,
 } = require('discord.js');
 const dayjs = require('dayjs');
 var customParseFormat = require('dayjs/plugin/customParseFormat');
@@ -57,6 +61,24 @@ module.exports = {
                 new StringSelectMenuOptionBuilder().setLabel('9').setValue('9'),
                 new StringSelectMenuOptionBuilder().setLabel('10').setValue('10')
             );
+
+        const oneButton = new ButtonBuilder().setCustomId('oneButton').setLabel('1').setStyle(ButtonStyle.Secondary);
+        const twoButton = new ButtonBuilder().setCustomId('twoButton').setLabel('2').setStyle(ButtonStyle.Secondary);
+        const threeButton = new ButtonBuilder()
+            .setCustomId('threeButton')
+            .setLabel('3')
+            .setStyle(ButtonStyle.Secondary);
+        const fourButton = new ButtonBuilder().setCustomId('fourButton').setLabel('4').setStyle(ButtonStyle.Secondary);
+        const fiveButton = new ButtonBuilder().setCustomId('fiveButton').setLabel('5').setStyle(ButtonStyle.Secondary);
+
+        const buttonRow = new ActionRowBuilder();
+        // .addComponents(
+        //     oneButton,
+        //     twoButton,
+        //     threeButton,
+        //     fourButton,
+        //     fiveButton
+        // );
 
         const choiceDropdown = new ActionRowBuilder().addComponents(pollChoiceCount);
 
@@ -110,8 +132,21 @@ module.exports = {
                         inline: true,
                     });
 
-                modalInteraction.reply({
+                if (optionsArr.length == 1) {
+                    buttonRow.addComponents(oneButton);
+                } else if (optionsArr.length == 2) {
+                    buttonRow.addComponents(oneButton, twoButton);
+                } else if (optionsArr.length == 3) {
+                    buttonRow.addComponents(oneButton, twoButton, threeButton);
+                } else if (optionsArr.length == 4) {
+                    buttonRow.addComponents(oneButton, twoButton, threeButton, fourButton);
+                } else if (optionsArr.length == 5) {
+                    buttonRow.addComponents(oneButton, twoButton, threeButton, fourButton, fiveButton);
+                }
+
+                const response = modalInteraction.reply({
                     embeds: [embed],
+                    components: [buttonRow],
                 });
 
                 // MANIPULATE THE DATA INTO PRESENTABLE EMBED WITH VOTING
