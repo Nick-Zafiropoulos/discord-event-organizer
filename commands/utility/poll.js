@@ -14,6 +14,10 @@ const {
     EmbedBuilder,
     Client,
     GatewayIntentBits,
+    GuildScheduledEvent,
+    GuildScheduledEventManager,
+    GuildScheduledEventPrivacyLevel,
+    GuildScheduledEventEntityType,
 } = require('discord.js');
 const dayjs = require('dayjs');
 var customParseFormat = require('dayjs/plugin/customParseFormat');
@@ -69,6 +73,7 @@ module.exports = {
         const reactionNums = [':one:', ':two:', ':three:', ':four:', ':five:'];
         const embedOptionsArr = [];
         const formattedDates = [];
+        const isoDatesArr = [];
         const reactionData = [
             { name: '1️⃣', count: 0 },
             { name: '2️⃣', count: 0 },
@@ -107,6 +112,14 @@ module.exports = {
                 'MMM/D/YYYY',
             ]).format('dddd MMMM Do, YYYY @ h:mm A');
             formattedDates.push(pushDate);
+            let isoDatesFormat = dayjs(`${optionsArr[i]}`, [
+                'M-D-YYYY h:mm A',
+                'M/D/YYYY h A',
+                'MMM-D-YYYY',
+                'M/D/YYYY',
+                'MMM/D/YYYY',
+            ]).toISOString();
+            isoDatesArr.push(isoDatesFormat);
         }
 
         console.log(formattedDates);
@@ -163,9 +176,10 @@ module.exports = {
                 // return emojiArr.includes(reaction.emoji.name) && user.id === interaction.user.id;
             };
 
-            const collector = message.createReactionCollector({ filter: collectorFilter, time: 15000 });
+            const collector = message.createReactionCollector({ filter: collectorFilter, time: 1.8e7 });
 
             let winningOption;
+            let winningIso;
             let timeout = true;
 
             collector.on('collect', (reaction, user) => {
@@ -200,22 +214,27 @@ module.exports = {
                 // Compare votes against total vote count required for an option to win
                 if (reactionData[0].count == votestowin) {
                     winningOption = formattedDates[0];
+                    winningIso = isoDatesArr[0];
                     timeout = false;
                     collector.stop();
                 } else if (reactionData[1].count == votestowin) {
                     winningOption = formattedDates[1];
+                    winningIso = isoDatesArr[1];
                     timeout = false;
                     collector.stop();
                 } else if (reactionData[2].count == votestowin) {
                     winningOption = formattedDates[2];
+                    winningIso = isoDatesArr[2];
                     timeout = false;
                     collector.stop();
                 } else if (reactionData[3].count == votestowin) {
                     winningOption = formattedDates[3];
+                    winningIso = isoDatesArr[3];
                     timeout = false;
                     collector.stop();
                 } else if (reactionData[4].count == votestowin) {
                     winningOption = formattedDates[4];
+                    winningIso = isoDatesArr[4];
                     timeout = false;
                     collector.stop();
                 } else {
@@ -228,8 +247,12 @@ module.exports = {
                     timeout = false;
                     winningOption = '';
                 } else {
-                    console.log(`Collected ${collected} items and the winning date is ${winningOption}`);
+                    console.log(
+                        `Collected ${collected} items and the winning date is ${winningOption} and ${winningIso}`
+                    );
+
                     message.reply(`The winning date is ${winningOption}`);
+
                     timeout = false;
                     winningOption = '';
                 }
