@@ -251,7 +251,25 @@ module.exports = {
                         `Collected ${collected} items and the winning date is ${winningOption} and ${winningIso}`
                     );
 
-                    message.reply(`The winning date is ${winningOption}`);
+                    message.reply(`${title} is now scheduled for ${winningOption}.`);
+
+                    const guildID = '1138962472515162172';
+                    const guild = interaction.client.guilds.cache.get(guildID);
+
+                    if (!guild) return console.log('Guild not found');
+
+                    const event_manager = new GuildScheduledEventManager(guild);
+
+                    event_manager.create({
+                        name: `${title}`,
+                        scheduledStartTime: new Date(`${winningIso}`),
+                        privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
+                        entityType: GuildScheduledEventEntityType.Voice,
+                        description: '',
+                        channel: '1138962472972337266',
+                        image: null,
+                        reason: 'Testing with creating a Scheduled Event',
+                    });
 
                     timeout = false;
                     winningOption = '';
