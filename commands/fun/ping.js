@@ -6,27 +6,26 @@ const {
     GuildScheduledEventEntityType,
 } = require('discord.js');
 
+// Default 1 day poll duration
+let pollDurationHours = 24;
+let pollDuration = 8.64e7;
+
 module.exports = {
-    data: new SlashCommandBuilder().setName('ping').setDescription('Replies with Pong!!'),
+    data: new SlashCommandBuilder()
+        .setName('ping')
+        .setDescription('POLL DURATION')
+        .addStringOption((option) =>
+            option
+                .setName('pollduration')
+                .setDescription('How long will the poll run for? (Example: "24" is a day)')
+                .setRequired(true)
+        ),
     async execute(interaction) {
+        const hoursOption = interaction.options.getString('pollduration');
+        const hoursOptionNum = Number(hoursOption);
+
+        pollDuration = hoursOptionNum * 3.6e6;
+        console.log(pollDuration);
         await interaction.reply('Pong!!');
-
-        const guildID = '1139307145301610537';
-        const guild = await interaction.client.guilds.cache.get(guildID);
-
-        if (!guild) return console.log('Guild not found');
-
-        const event_manager = new GuildScheduledEventManager(guild);
-
-        await event_manager.create({
-            name: 'Test Event',
-            scheduledStartTime: new Date('2023-09-24T00:00:00+05:30'),
-            privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
-            entityType: GuildScheduledEventEntityType.Voice,
-            description: 'This is a test Scheduled Event',
-            channel: '1139307145771368481',
-            image: null,
-            reason: 'Testing with creating a Scheduled Event',
-        });
     },
 };

@@ -40,6 +40,12 @@ module.exports = {
         )
         .addStringOption((option) =>
             option
+                .setName('pollduration')
+                .setDescription('How long will the poll run for? (Example: "24" is a day)')
+                .setRequired(true)
+        )
+        .addStringOption((option) =>
+            option
                 .setName('option1')
                 .setDescription('Specify a date and time (EXAMPLE: 5/16/2023 5:00 PM)')
                 .setRequired(true)
@@ -81,6 +87,11 @@ module.exports = {
             { name: '4️⃣', count: 0 },
             { name: '5️⃣', count: 0 },
         ];
+
+        // Set duration in milliseconds
+        const hoursOption = interaction.options.getString('pollduration');
+        const hoursOptionNum = Number(hoursOption);
+        const pollDuration = hoursOptionNum * 3.6e6;
 
         // Set up options arrays based on how many options were actually submitted
         if (option2 !== null) {
@@ -176,7 +187,7 @@ module.exports = {
                 // return emojiArr.includes(reaction.emoji.name) && user.id === interaction.user.id;
             };
 
-            const collector = message.createReactionCollector({ filter: collectorFilter, time: 1.8e7 });
+            const collector = message.createReactionCollector({ filter: collectorFilter, time: pollDuration });
 
             let winningOption;
             let winningIso;
@@ -251,9 +262,9 @@ module.exports = {
                         `Collected ${collected} items and the winning date is ${winningOption} and ${winningIso}`
                     );
 
-                    message.reply(`${title} is now scheduled for ${winningOption}.`);
+                    message.reply(`${title} is now scheduled for ${winningOption}. and duration is ${pollDuration}`);
 
-                    const guildID = '1138962472515162172';
+                    const guildID = `${message.guild.id}`;
                     const guild = interaction.client.guilds.cache.get(guildID);
 
                     if (!guild) return console.log('Guild not found');
@@ -266,7 +277,7 @@ module.exports = {
                         privacyLevel: GuildScheduledEventPrivacyLevel.GuildOnly,
                         entityType: GuildScheduledEventEntityType.Voice,
                         description: '',
-                        channel: '1138962472972337266',
+                        channel: `${process.env.EVENT_CHANNEL}`,
                         image: null,
                         reason: 'Testing with creating a Scheduled Event',
                     });
