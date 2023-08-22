@@ -18,6 +18,7 @@ const {
     GuildScheduledEventManager,
     GuildScheduledEventPrivacyLevel,
     GuildScheduledEventEntityType,
+    MessageReaction,
 } = require('discord.js');
 const dayjs = require('dayjs');
 var customParseFormat = require('dayjs/plugin/customParseFormat');
@@ -87,13 +88,37 @@ module.exports = {
             { name: '4️⃣', count: 0 },
             { name: '5️⃣', count: 0 },
         ];
+        const cancelArr = ['❌'];
+        let cancelReaction = false;
 
         // Set duration in milliseconds
         const hoursOption = interaction.options.getString('pollduration');
         const hoursOptionNum = Number(hoursOption);
         const pollDuration = hoursOptionNum * 3.6e6;
 
-        // Set up options arrays based on how many options were actually submitted
+        // Error handling for incorrect votestowin and pollduration inputs.
+        const votestowinNum = Number(votestowin);
+        if (Number.isNaN(votestowinNum)) {
+            await interaction.reply({
+                content: 'The value entered in the "votestowin" field was not valid, please try again.',
+                ephemeral: true,
+            });
+        }
+        if (Number.isNaN(hoursOptionNum)) {
+            await interaction.reply({
+                content: 'The value entered in the "pollduration" field was not valid, please try again.',
+                ephemeral: true,
+            });
+        }
+        if (hoursOptionNum > 168 || hoursOptionNum <= 0) {
+            await interaction.reply({
+                content:
+                    'The value entered in the "pollduration" field was outside of allowable limits, please enter a different duration.',
+                ephemeral: true,
+            });
+        }
+
+        // Set up options arrays based on how many options were actually submitted.
         if (option2 !== null) {
             emojiArr.push('2️⃣');
             optionsArr.push(option2);
@@ -110,27 +135,33 @@ module.exports = {
             emojiArr.push('5️⃣');
             optionsArr.push(option5);
         }
+        emojiArr.push('❌');
+
         console.log(emojiArr);
         console.log(optionsArr);
 
         // Set allowable date input formats and how they are reformatted for the poll embed
         for (i = 0; i < optionsArr.length; i++) {
-            let pushDate = dayjs(`${optionsArr[i]}`, [
-                'M-D-YYYY h:mm A',
-                'M/D/YYYY h A',
-                'MMM-D-YYYY',
-                'M/D/YYYY',
-                'MMM/D/YYYY',
-            ]).format('dddd MMMM Do, YYYY @ h:mm A');
-            formattedDates.push(pushDate);
-            let isoDatesFormat = dayjs(`${optionsArr[i]}`, [
-                'M-D-YYYY h:mm A',
-                'M/D/YYYY h A',
-                'MMM-D-YYYY',
-                'M/D/YYYY',
-                'MMM/D/YYYY',
-            ]).toISOString();
-            isoDatesArr.push(isoDatesFormat);
+            try {
+                let pushDate = dayjs(`${optionsArr[i]}`, [
+                    'M-D-YYYY h:mm A',
+                    'M/D/YYYY h A',
+                    'MMM-D-YYYY',
+                    'M/D/YYYY',
+                    'MMM/D/YYYY',
+                ]).format('dddd MMMM Do, YYYY @ h:mm A');
+                formattedDates.push(pushDate);
+                let isoDatesFormat = dayjs(`${optionsArr[i]}`, [
+                    'M-D-YYYY h:mm A',
+                    'M/D/YYYY h A',
+                    'MMM-D-YYYY',
+                    'M/D/YYYY',
+                    'MMM/D/YYYY',
+                ]).toISOString();
+                isoDatesArr.push(isoDatesFormat);
+            } catch (error) {
+                console.log(error);
+            }
         }
 
         console.log(formattedDates);
@@ -138,6 +169,14 @@ module.exports = {
         // Create the array of options that will be shown in the poll embed
         for (let i = 0; i < optionsArr.length && i < 5; i++) {
             embedOptionsArr.push([reactionNums[i], formattedDates[i]]);
+        }
+
+        // Error handling for incorrectly inputted poll options
+        if (formattedDates.indexOf('Invalid Date') !== -1) {
+            await interaction.reply({
+                content: 'An invalid date was entered for one or more of the poll options. Please try again.',
+                ephemeral: true,
+            });
         }
 
         // Set up poll options by checking length of options array, then add the numbers to it with a for loop
@@ -170,6 +209,7 @@ module.exports = {
                 for (let i = 0; i < emojiArr.length; i++) {
                     await message.react(emojiArr[i]);
                 }
+                await message.react(cancelArr[0]);
             } catch (error) {
                 console.error('One of the emojis failed to react:', error);
             }
@@ -187,12 +227,18 @@ module.exports = {
                 // return emojiArr.includes(reaction.emoji.name) && user.id === interaction.user.id;
             };
 
-            const collector = message.createReactionCollector({ filter: collectorFilter, time: pollDuration });
+            const collector = message.createReactionCollector({
+                filter: collectorFilter,
+                time: pollDuration,
+                dispose: true,
+            });
 
             let winningOption;
             let winningIso;
             let timeout = true;
 
+            // Increase vote count when reactions are logged, decrease when reactions are removed.
+            // Check against total votes required for an option to win.
             collector.on('collect', (reaction, user) => {
                 if (uniqueReactsArr.indexOf(user.id) == -1 && user.id !== message.author.id) {
                     uniqueReactsArr.push(user.id);
@@ -202,6 +248,7 @@ module.exports = {
 
                 console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
 
+                // Increase vote count based on reaction added.
                 if (user.id !== message.author.id) {
                     switch (reaction.emoji.name) {
                         case '1️⃣':
@@ -218,6 +265,9 @@ module.exports = {
                             break;
                         case '5️⃣':
                             reactionData[4].count++;
+                            break;
+                        case '❌':
+                            cancelReaction = true;
                             break;
                     }
                 }
@@ -248,21 +298,55 @@ module.exports = {
                     winningIso = isoDatesArr[4];
                     timeout = false;
                     collector.stop();
+                } else if (cancelReaction == true) {
+                    timeout = false;
+                    collector.stop();
                 } else {
+                }
+            });
+
+            collector.on('remove', (reaction, user) => {
+                console.log(`${user.tag} removed the reaction ${reaction.emoji.name}`);
+
+                // Decrease vote count based on reaction added.
+                if (user.id !== message.author.id) {
+                    switch (reaction.emoji.name) {
+                        case '1️⃣':
+                            reactionData[0].count--;
+                            break;
+                        case '2️⃣':
+                            reactionData[1].count--;
+                            break;
+                        case '3️⃣':
+                            reactionData[2].count--;
+                            break;
+                        case '4️⃣':
+                            reactionData[3].count--;
+                            break;
+                        case '5️⃣':
+                            reactionData[4].count--;
+                            break;
+                    }
                 }
             });
 
             collector.on('end', (collected) => {
                 if (timeout == true) {
                     console.log(`No option reached the required amount of votes, poll cancelled.`);
+                    message.reply(`No option reached the required amount of votes, poll cancelled.`);
+                    timeout = false;
+                    winningOption = '';
+                } else if (cancelReaction == true) {
+                    console.log(`Poll manually cancelled.`);
+                    message.reply(`Poll manually cancelled.`);
                     timeout = false;
                     winningOption = '';
                 } else {
-                    console.log(
-                        `Collected ${collected} items and the winning date is ${winningOption} and ${winningIso}`
-                    );
+                    // console.log(
+                    // `Collected ${collected} items and the winning date is ${winningOption}.`
+                    // );
 
-                    message.reply(`${title} is now scheduled for ${winningOption}. and duration is ${pollDuration}`);
+                    message.reply(`${title} is now scheduled for ${winningOption}.`);
 
                     const guildID = `${message.guild.id}`;
                     const guild = interaction.client.guilds.cache.get(guildID);
