@@ -27,6 +27,7 @@ var advancedFormat = require('dayjs/plugin/advancedFormat');
 dayjs.extend(advancedFormat);
 
 module.exports = {
+    // Builds the poll command including all input options available to user.
     data: new SlashCommandBuilder()
         .setName('poll')
         .setDescription('Select a member and ban them.')
@@ -63,11 +64,10 @@ module.exports = {
         .addStringOption((option) =>
             option.setName('option5').setDescription('Specify a date and time (EXAMPLE: 5/16/2023 5:00 PM)')
         )
-        // .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
         .setDMPermission(false),
 
     async execute(interaction) {
-        // Set up options for slash command
+        // Gather data from users inputs during slash command.
         const title = interaction.options.getString('title');
         const votestowin = interaction.options.getString('votestowin');
         const option1 = interaction.options.getString('option1');
@@ -91,7 +91,7 @@ module.exports = {
         const cancelArr = ['❌'];
         let cancelReaction = false;
 
-        // Set duration in milliseconds
+        // Set duration of poll in milliseconds.
         const hoursOption = interaction.options.getString('pollduration');
         const hoursOptionNum = Number(hoursOption);
         const pollDuration = hoursOptionNum * 3.6e6;
@@ -137,10 +137,7 @@ module.exports = {
         }
         emojiArr.push('❌');
 
-        console.log(emojiArr);
-        console.log(optionsArr);
-
-        // Set allowable date input formats and how they are reformatted for the poll embed
+        // Set allowable date input formats and how they are reformatted for the poll embed.
         for (i = 0; i < optionsArr.length; i++) {
             try {
                 let pushDate = dayjs(`${optionsArr[i]}`, [
@@ -164,14 +161,12 @@ module.exports = {
             }
         }
 
-        console.log(formattedDates);
-
-        // Create the array of options that will be shown in the poll embed
+        // Create the array of options that will be shown in the poll embed.
         for (let i = 0; i < optionsArr.length && i < 5; i++) {
             embedOptionsArr.push([reactionNums[i], formattedDates[i]]);
         }
 
-        // Error handling for incorrectly inputted poll options
+        // Error handling for incorrectly inputted poll options.
         if (formattedDates.indexOf('Invalid Date') !== -1) {
             await interaction.reply({
                 content: 'An invalid date was entered for one or more of the poll options. Please try again.',
@@ -179,23 +174,21 @@ module.exports = {
             });
         }
 
-        // Set up poll options by checking length of options array, then add the numbers to it with a for loop
-
+        // Format the poll options to look readable to users.
         const displayOptions = embedOptionsArr.join('\n').replaceAll(',', ' ');
-        // await interaction.reply(`${option1} ${option2} ${option3}`);
 
+        // Create the embed to display poll options.
         const embed = new EmbedBuilder()
             .setTitle(`${title}`)
             // .setDescription('')
             .setColor('Random')
             .addFields({
                 name: 'Respond to this event poll by selecting all options that work for you:',
-                // value: `${displayOptions}`,
                 value: `${displayOptions}`,
                 inline: true,
             });
 
-        // Create reactions for poll responses
+        // Create reactions for poll responses.
         if (!interaction.isChatInputCommand()) return;
 
         const { commandName } = interaction;
@@ -214,17 +207,14 @@ module.exports = {
                 console.error('One of the emojis failed to react:', error);
             }
 
-            // Collect poll responses through reactions
+            // Collect poll responses through reactions.
             const uniqueReactsArr = [];
             const collectorFilter = (reaction, user) => {
                 if (uniqueReactsArr.indexOf(user.id) == -1 && user.id !== message.author.id) {
                     uniqueReactsArr.push(user.id);
-                    console.log(uniqueReactsArr);
                 }
-                console.log(message.author.id);
 
                 return emojiArr.includes(reaction.emoji.name) && user.id !== message.author.id;
-                // return emojiArr.includes(reaction.emoji.name) && user.id === interaction.user.id;
             };
 
             const collector = message.createReactionCollector({
@@ -242,11 +232,7 @@ module.exports = {
             collector.on('collect', (reaction, user) => {
                 if (uniqueReactsArr.indexOf(user.id) == -1 && user.id !== message.author.id) {
                     uniqueReactsArr.push(user.id);
-                    console.log(uniqueReactsArr);
                 }
-                console.log(message.author.id);
-
-                console.log(`Collected ${reaction.emoji.name} from ${user.tag}`);
 
                 // Increase vote count based on reaction added.
                 if (user.id !== message.author.id) {
@@ -272,7 +258,7 @@ module.exports = {
                     }
                 }
 
-                // Compare votes against total vote count required for an option to win
+                // Compare votes against total vote count required for an option to win.
                 if (reactionData[0].count == votestowin) {
                     winningOption = formattedDates[0];
                     winningIso = isoDatesArr[0];
@@ -306,8 +292,6 @@ module.exports = {
             });
 
             collector.on('remove', (reaction, user) => {
-                console.log(`${user.tag} removed the reaction ${reaction.emoji.name}`);
-
                 // Decrease vote count based on reaction added.
                 if (user.id !== message.author.id) {
                     switch (reaction.emoji.name) {
@@ -330,22 +314,17 @@ module.exports = {
                 }
             });
 
+            // On termination of poll, decide what happens.
             collector.on('end', (collected) => {
                 if (timeout == true) {
-                    console.log(`No option reached the required amount of votes, poll cancelled.`);
                     message.reply(`No option reached the required amount of votes, poll cancelled.`);
                     timeout = false;
                     winningOption = '';
                 } else if (cancelReaction == true) {
-                    console.log(`Poll manually cancelled.`);
                     message.reply(`Poll manually cancelled.`);
                     timeout = false;
                     winningOption = '';
                 } else {
-                    // console.log(
-                    // `Collected ${collected} items and the winning date is ${winningOption}.`
-                    // );
-
                     message.reply(`${title} is now scheduled for ${winningOption}.`);
 
                     const guildID = `${message.guild.id}`;

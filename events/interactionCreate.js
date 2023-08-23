@@ -1,5 +1,6 @@
 const { Events } = require('discord.js');
 
+// This file handles interactions from the user when executing slash commands.
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
