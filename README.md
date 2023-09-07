@@ -17,3 +17,5 @@ Event Organizer is a scheduler for Discord that allows a user to poll other user
 
 ![javascript](https://user-images.githubusercontent.com/102330367/221290588-1ac76a5e-a1ef-4008-b494-ed3d2a1700f6.svg)
 ![nodejs-dark](https://user-images.githubusercontent.com/102330367/221290680-7a735c9a-e52f-469a-ba8c-83dd3b8079f2.svg)
+
+Javascript, Node.js
