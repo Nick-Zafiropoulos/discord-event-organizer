@@ -1,6 +1,9 @@
 # discord-event-organizer
 Event Organizer is a scheduler for Discord that allows a user to poll other users for their availability and automatically creates events based on the result of the poll.
 
+<a href="https://eventorganizer.up.railway.app/">
+    <img width="130px" alt="Discord Event Organizer Site" title="Go to Site" src="https://custom-icon-badges.demolab.com/badge/-Go%20to%20Site-purple?style=for-the-badge&logoColor=white&logo=sign-in"/></a>
+
 # How Does It Work?
 
 1. Use the /poll command to customize the event poll with the following parameters:
